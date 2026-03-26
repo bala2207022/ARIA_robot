@@ -1,0 +1,20 @@
+# Core AI
+anthropic
+# Face Recognition
+opencv-python
+face-recognition
+numpy
+# Voice Input/Output
+speechrecognition
+pyaudio
+gTTS
+playsound
+# Bluetooth Tracking
+bluetooth
+PyBluez
+# Arduino Communication
+pyserial
+# API Requests
+requests
+# Utilities
+python-dotenv
