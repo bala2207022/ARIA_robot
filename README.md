@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Platform-Raspberry%20Pi-red?style=for-the-badge&logo=raspberrypi" alt="Raspberry Pi"/>
   <img src="https://img.shields.io/badge/Platform-Arduino-blue?style=for-the-badge&logo=arduino" alt="Arduino"/>
   <img src="https://img.shields.io/badge/Language-Python-yellow?style=for-the-badge&logo=python" alt="Python"/>
-  <img src="https://img.shields.io/badge/AI-Powered-green?style=for-the-badge&logo=openai" alt="AI"/>
+  <img src="https://img.shields.io/badge/AI-Claude%20API-green?style=for-the-badge" alt="AI"/>
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="MIT License"/>
 </p>
 
@@ -54,6 +54,9 @@ ARIA: *follows you across the room* 🤖
 | **AI Conversations** | Answers questions, tells jokes, holds conversations |
 | **Autonomous Movement** | Follows you around the room automatically |
 | **Obstacle Avoidance** | Detects and avoids objects in its path |
+| **Bluetooth Tracking** | Finds you in any room using your phone's Bluetooth |
+| **Object Detection** | Point camera at anything — ARIA explains it |
+| **Live Weather** | Real-time weather updates for your location |
 
 ---
 
@@ -119,19 +122,16 @@ ARIA: *follows you across the room* 🤖
 
 ## Hardware Required
 
-| Component | Model | Purpose | Approx. Cost |
-|-----------|-------|---------|--------------|
-| Single Board Computer | Raspberry Pi Zero 2W | Main processor — runs ML and AI | $15 |
-| Microcontroller | Arduino Uno R3 | Motor controller and sensors | $25 |
-| Camera | Pi Camera Module (5MP) | Face detection and tracking | $25 |
-| Microphone | USB Mini Microphone | Voice input | $8 |
-| Speaker | Mini 3W Speaker | Voice output | $5 |
-| Chassis | 4WD Robot Car Kit | Mobility platform | $30 |
-| Distance Sensor | HC-SR04 Ultrasonic | Obstacle detection | $3 |
-| Power | 18650 Battery Pack | Power supply | $15 |
-| Misc | Jumper wires, breadboard | Connections | $10 |
-
-**Estimated Total: ~$136**
+| Component | Model | Purpose |
+|-----------|-------|---------|
+| Single Board Computer | Raspberry Pi Zero 2W | Main processor — runs ML and AI |
+| Microcontroller | Arduino Uno R3 | Motor controller and sensors |
+| Camera | Arducam Pi Zero Camera (5MP) | Face detection and tracking |
+| Microphone | USB Mini Microphone | Voice input |
+| Speaker | Mini Speaker | Voice output |
+| Chassis | 4WD Robot Car Kit | Mobility platform |
+| Distance Sensor | HC-SR04 Ultrasonic | Obstacle detection |
+| Storage | MicroSD Card (32GB) | Operating system and code |
 
 ---
 
@@ -144,7 +144,11 @@ ARIA: *follows you across the room* 🤖
 | **face_recognition** | ML-based face identification |
 | **Google Speech API** | Speech-to-text conversion |
 | **pyttsx3 / gTTS** | Text-to-speech output |
-| **OpenAI / Claude API** | AI response generation |
+| **Claude API** | AI response generation |
+| **OpenWeatherMap API** | Live weather data |
+| **Arduino IDE (C++)** | Motor and sensor control |
+| **PySerial** | Pi ↔ Arduino communication |
+| **PyBluez** | Bluetooth tracking |
 | **Arduino IDE (C++)** | Motor and sensor control |
 | **PySerial** | Pi ↔ Arduino communication |
 
@@ -156,30 +160,25 @@ ARIA: *follows you across the room* 🤖
 ARIA/
 │
 ├── README.md                    # You are here
+├── requirements.txt             # Python dependencies
+├── .env.example                 # API key template
 │
-├── pi/                          # Raspberry Pi code
-│   │
-│   ├── main.py                  # Main entry point — starts ARIA
-│   │
-│   ├── face_recognition/        # Vision module
-│   │   ├── train.py             # Train ARIA to recognize faces
-│   │   ├── recognize.py         # Real-time face recognition
-│   │   └── known_faces/         # Stored face data
-│   │       └── bala.pkl         # Example: Bala's face encoding
-│   │
-│   ├── voice/                   # Audio module
-│   │   ├── listener.py          # Captures voice commands
-│   │   └── speaker.py           # Speaks responses
-│   │
-│   ├── ai/                      # Intelligence module
-│   │   └── assistant.py         # Handles AI conversations
-│   │
-│   └── motor_control/           # Movement module
-│       └── serial_comm.py       # Sends commands to Arduino
+├── main.py                      # Main entry point — starts ARIA
 │
-└── arduino/                     # Arduino code
-    └── aria_motors/
-        └── aria_motors.ino      # Motor + ultrasonic sensor logic
+├── ai/                          # Intelligence module
+│   └── assistant.py             # Claude API integration
+│
+├── voice/                       # Audio module
+│   ├── listener.py              # Captures voice commands
+│   └── speaker.py               # Speaks responses via gTTS
+│
+├── face_recognition/            # Vision module
+│   ├── train.py                 # Train ARIA to recognize faces
+│   ├── recognize.py             # Real-time face recognition
+│   └── known_faces/             # Stored face encodings
+│
+└── motor_control/               # Movement module
+    └── serial_comm.py           # Sends commands to Arduino
 ```
 
 ---
@@ -188,32 +187,31 @@ ARIA/
 
 ### Prerequisites
 
-- Raspberry Pi with Raspberry Pi OS installed
+- Raspberry Pi Zero 2W with Raspberry Pi OS installed
 - Arduino Uno with USB cable
 - All hardware components connected
 
-### Step 1: Set Up Raspberry Pi
+### Step 1: Clone the Repository
 
 ```bash
-# Update system
-sudo apt-get update && sudo apt-get upgrade -y
-
-# Install system dependencies
-sudo apt-get install -y python3-pip python3-opencv libatlas-base-dev
-
-# Install Python packages
-pip3 install face_recognition SpeechRecognition pyttsx3 pyserial openai
+git clone https://github.com/bala2207022/ARIA_robot.git
+cd ARIA_robot
 ```
 
-### Step 2: Enable Camera
+### Step 2: Install Dependencies
 
 ```bash
-sudo raspi-config
-# Navigate to: Interface Options → Camera → Enable
-# Reboot when prompted
+pip3 install -r requirements.txt
 ```
 
-### Step 3: Train Face Recognition
+### Step 3: Configure API Keys
+
+```bash
+cp .env.example .env
+# Edit .env and add your API keys
+```
+
+### Step 4: Train Face Recognition
 
 ```bash
 cd pi/face_recognition
@@ -226,29 +224,28 @@ python3 train.py --name "YourName"
 
 ### Step 4: Upload Arduino Code
 
-1. Open `arduino/aria_motors/aria_motors.ino` in Arduino IDE
+1. Open `motor_control/aria_motors.ino` in Arduino IDE
 2. Select **Board: Arduino Uno**
 3. Select the correct **Port**
 4. Click **Upload**
 
-### Step 5: Configure AI API
+### Step 5: Run ARIA
 
 ```bash
-# Set your API key (OpenAI or Claude)
-export OPENAI_API_KEY="your-api-key-here"
-
-# Or add to ~/.bashrc for persistence
-echo 'export OPENAI_API_KEY="your-key"' >> ~/.bashrc
-```
-
-### Step 6: Run ARIA
-
-```bash
-cd pi
 python3 main.py
 ```
 
-ARIA is now active!
+---
+
+## Environment Variables
+
+Create a `.env` file based on `.env.example`:
+
+```
+CLAUDE_API_KEY=your_claude_api_key
+WEATHER_API_KEY=your_openweathermap_key
+NEWS_API_KEY=your_newsapi_key
+```
 
 ---
 
@@ -258,13 +255,13 @@ ARIA is now active!
 |----------|----------------|
 | *"ARIA, follow me"* | Starts following you |
 | *"ARIA, stop"* | Stops all movement |
-| *"ARIA, who am I?"* | Tells you who it recognizes |
+| *"ARIA, come here"* | Bluetooth tracking to find you |
 | *"ARIA, what time is it?"* | Tells current time |
+| *"ARIA, what's the weather?"* | Live weather update |
 | *"ARIA, tell me a joke"* | Tells a random joke |
-| *"ARIA, what's the weather?"* | Gives weather update |
+| *"ARIA, what is this?"* | Object detection via camera |
 | *"ARIA, go to sleep"* | Enters low-power mode |
 | *"ARIA, wake up"* | Exits sleep mode |
-| *"ARIA, how are you?"* | Responds conversationally |
 | *Any question* | AI answers intelligently |
 
 ---
@@ -275,11 +272,11 @@ ARIA is now active!
 
 | Pi Pin | Connects To |
 |--------|-------------|
-| USB | Arduino (for serial communication) |
+| USB | Arduino (serial communication) |
 | USB | USB Microphone |
-| Camera Port | Pi Camera Module |
-| 3.5mm Audio / GPIO | Speaker |
-| 5V | Power (via battery pack) |
+| Camera Port | Arducam Pi Zero Camera |
+| GPIO | Speaker via amplifier |
+| 5V / GND | Power supply |
 | GND | Common ground |
 
 ### Arduino Connections
@@ -301,33 +298,23 @@ ARIA is now active!
 |---------|----------|
 | Camera not detected | Run `sudo raspi-config` and enable camera |
 | Face not recognized | Retrain with better lighting and more photos |
-| No audio output | Check speaker connection, run `speaker-test` |
+| No audio output | Check speaker connection |
 | Motors not moving | Verify Arduino wiring and serial connection |
-| "No module" error | Install missing package with `pip3 install <package>` |
-| ARIA not responding | Check microphone connection, verify API key |
+| "No module" error | Run `pip3 install -r requirements.txt` |
+| ARIA not responding | Check microphone and verify API keys in `.env` |
 
 ---
 
 ## Future Enhancements
 
-- [ ] Add emotion detection from facial expressions
-- [ ] Implement gesture recognition for hand commands
-- [ ] Add home automation integration (smart lights, etc.)
-- [ ] Build mobile app for remote monitoring
-- [ ] Add multi-person tracking
-- [ ] Implement SLAM for room mapping
-
----
-
-## Contributing
-
-Contributions are welcome! Feel free to:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- [ ] Emotion detection from facial expressions
+- [ ] Gesture recognition for hand commands
+- [ ] Home automation integration (smart lights, etc.)
+- [ ] Mobile app for remote monitoring
+- [ ] Multi-person tracking
+- [ ] SLAM for room mapping
+- [ ] Spotify music control
+- [ ] Google Calendar integration
 
 ---
 
@@ -346,5 +333,5 @@ This project is open source under the [MIT License](LICENSE).
 ---
 
 <p align="center">
-  <em>Built with curiosity, Python, and way too many jumper wires.</em>
+  <em>Built with curiosity, Python, and way too many jumper wires. 🔌</em>
 </p>
