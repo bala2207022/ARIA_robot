@@ -1,13 +1,28 @@
-from gtts import gTTS
 import os
 import tempfile
 
-def speak(text):
-    print(f"ARIA says: {text}")
-    tts = gTTS(text=text, lang='en', slow=False)
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as f:
-        tts.save(f.name)
-        os.system(f"afplay {f.name}")
+is_speaking = False
 
-if __name__ == "__main__":
-    speak("Hello! I am ARIA, your AI Robot Intelligence Assistant!")
+
+def speak(text: str) -> None:
+    global is_speaking
+    is_speaking = True
+    print(f'ARIA: {text}')
+    try:
+        from gtts import gTTS
+        with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as f:
+            tmp = f.name
+        tts = gTTS(text=text, lang='en', slow=False)
+        tts.save(tmp)
+        os.system(f'mpg123 -q {tmp} 2>/dev/null')
+        os.unlink(tmp)
+    except Exception:
+        # Fallback to espeak when gTTS / mpg123 is unavailable
+        safe = text.replace('"', "'")
+        os.system(f'espeak -s 145 "{safe}" 2>/dev/null')
+    finally:
+        is_speaking = False
+
+
+if __name__ == '__main__':
+    speak('Hello! I am ARIA, your AI Robot Intelligence Assistant!')
